@@ -26,7 +26,7 @@ neutron router-create router1
 neutron router-gateway-set router1 nova
 # add interface to router1
 TENANT_SUBNET=$(neutron net-list | grep private | awk '{ print $6 }')
-neutron router-interface-add router1 <tenant network subnet id>
+neutron router-interface-add router1 $TENANT_SUBNET
 # autorize ping and ssh
 nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0;
 nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
