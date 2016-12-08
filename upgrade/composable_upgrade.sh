@@ -48,7 +48,7 @@ EOF
 
 git clone https://github.com/openstack/tripleo-heat-templates.git /home/stack/tripleo-heat-templates
 for i in 393448; do # already merged 375973 375977
-    curl "https://review.openstack.org/changes/$i/revisions/current/patch" |base64 --decode > /home/stack/"$i.patch"
+    curl "https://review.openstack.org/changes/$i/revisions/15/patch" |base64 --decode > /home/stack/"$i.patch"
     pushd tripleo-heat-templates
     patch -N -p1 -b -z .first < /home/stack/$i.patch
     popd
