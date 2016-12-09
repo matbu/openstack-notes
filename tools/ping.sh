@@ -1,5 +1,6 @@
 #!/bin/bash
 # ping test
+source overcloudrc
 # create key
 nova keypair-add --pub-key ~/.ssh/id_rsa.pub default
 # get cirros image
