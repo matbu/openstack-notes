@@ -12,3 +12,8 @@ openstack overcloud image upload
 openstack baremetal import --json instackenv.json
 openstack baremetal configure boot
 openstack baremetal introspection bulk start
+# Get the newton tripleo-heat-templates
+if [ -d tripleo-heat-templates ]; then
+    rm -rf tripleo-heat-templates
+fi
+git clone https://github.com/openstack/tripleo-heat-templates -b stable/newton
