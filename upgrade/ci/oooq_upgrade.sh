@@ -1,7 +1,8 @@
 #!/bin/bash
 
-export VIRTHOST=$1
-export WORKSPACE=$2
+VIRTHOST=$1
+WORKSPACE=$2
+RELEASE=newton
 
 if [ ! -d 'tripleo-quickstart' ]; then
     git clone https://git.openstack.org/openstack/tripleo-quickstart
@@ -12,7 +13,7 @@ bash quickstart.sh \
     --working-dir $WORKSPACE/ \
     --no-clone \
     --bootstrap \
-    --tags "teardown-all,untagged,provision,environment,undercloud-scripts,undercloud-install"\
+    --tags teardown-all,untagged,provision,environment,undercloud-scripts,undercloud-install \
     --teardown all \
     --requirements quickstart-extras-requirements.txt \
     --playbook quickstart-extras.yml \
