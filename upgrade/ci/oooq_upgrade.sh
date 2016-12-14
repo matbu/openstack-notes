@@ -3,7 +3,7 @@
 export VIRTHOST=$1
 export WORKSPACE=$2
 
-if [ -d 'tripleo-quickstart' ]; then
+if [ ! -d 'tripleo-quickstart' ]; then
     git clone https://git.openstack.org/openstack/tripleo-quickstart
 fi
 pushd tripleo-quickstart
