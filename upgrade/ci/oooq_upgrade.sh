@@ -21,4 +21,5 @@ bash quickstart.sh \
     $VIRTHOST
 popd
 
-#ansible-playbook -vvvv upgrade-play.yaml -i hosts
+export SSH_CONFIG=$WORKSPACE/ssh.config.ansible
+ansible-playbook -vvvv upgrade-play.yaml -i hosts
