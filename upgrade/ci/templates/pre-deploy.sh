@@ -8,7 +8,7 @@ curl -sf -C- https://images.rdoproject.org/master/delorean/consistent/stable/ove
 curl -sf -C- https://images.rdoproject.org/master/delorean/consistent/stable/ironic-python-agent.tar | tar -x
 # Upload image
 source /home/stack/stackrc
-openstack overcloud image upload \
+openstack overcloud image upload
 openstack baremetal import --json instackenv.json
 openstack baremetal configure boot
 openstack baremetal introspection bulk start
