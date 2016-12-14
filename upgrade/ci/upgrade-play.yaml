@@ -1,0 +1,25 @@
+---
+- name: Deploy dummy overcloud
+  hosts: undercloud
+  gather_facts: yes
+  tasks:
+    - name: create service file
+      template:
+        src: "services.yaml"
+        dest: "/home/stack/service_enable.yaml"
+
+    - name: create pre deploy script
+      template:
+        src: "pre-deploy.sh"
+        dest: "/home/stack/pre-deploy.sh"
+        mode: 0755
+
+    - name: execute pre deploy
+      shell: |
+        ./pre-deploy.sh
+
+    - name: deploy the overcloud
+      shell: |
+        openstack overcloud deploy --templates tripleo-heat-templates \
+        --libvirt-type=qemu -t  80 --compute-scale 0 --control-scale 1 \
+        -e /home/stack/service_enable.yaml

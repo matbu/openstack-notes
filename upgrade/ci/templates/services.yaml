@@ -1,0 +1,11 @@
+parameter_defaults:
+  ControllerServices:
+    - OS::TripleO::Services::Kernel
+    - OS::TripleO::Services::Keystone
+    - OS::TripleO::Services::RabbitMQ
+    - OS::TripleO::Services::MySQL
+    - OS::TripleO::Services::HAproxy
+    - OS::TripleO::Services::Keepalived
+    - OS::TripleO::Services::Ntp
+    - OS::TripleO::Services::Timezone
+    - OS::TripleO::Services::TripleoPackages

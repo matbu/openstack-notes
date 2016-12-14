@@ -61,6 +61,13 @@ for i in 403397; do # already merged 375973 375977
     popd
 done
 
+for i in 408631; do # already merged 375973 375977
+    curl "https://review.openstack.org/changes/$i/revisions/current/patch" |base64 --decode > /home/stack/"$i.patch"
+    pushd tripleo-heat-templates
+    patch -N -p1 -b -z .first < /home/stack/$i.patch
+    popd
+done
+
 echo "Create default ansible module dir"
 run-on-overcloud 'sudo mkdir -p /usr/share/my_modules/'
 echo "Set ansible module dir"
