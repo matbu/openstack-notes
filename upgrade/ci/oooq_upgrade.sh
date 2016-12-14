@@ -22,4 +22,5 @@ bash quickstart.sh \
 popd
 
 export SSH_CONFIG=$WORKSPACE/ssh.config.ansible
+export ANSIBLE_SSH_ARGS="-F ${SSH_CONFIG}"
 ansible-playbook -vvvv upgrade-play.yaml -i hosts
