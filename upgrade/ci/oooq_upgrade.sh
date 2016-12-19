@@ -3,6 +3,7 @@
 VIRTHOST=$1
 WORKSPACE=$2
 RELEASE=newton
+CONFIG=minimal
 
 if [ ! -d 'tripleo-quickstart' ]; then
     git clone https://git.openstack.org/openstack/tripleo-quickstart
