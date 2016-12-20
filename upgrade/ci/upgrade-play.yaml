@@ -20,7 +20,8 @@
 
     - name: deploy the overcloud
       shell: |
-        source stackrc;
-        openstack overcloud deploy --templates tripleo-heat-templates \
+        source /home/stack/stackrc;
+        git clone https://github.com/openstack/tripleo-heat-templates -b stable/newton;
+        openstack overcloud deploy --templates \
         --libvirt-type=qemu -t  80 --compute-scale 0 --control-scale 1 \
         -e /home/stack/service_enable.yaml  > overcloud.log 2>&1

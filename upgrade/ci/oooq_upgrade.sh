@@ -2,7 +2,7 @@
 
 VIRTHOST=$1
 WORKSPACE=$2
-RELEASE=newton
+RELEASE=master
 CONFIG=minimal
 
 if [ ! -d 'tripleo-quickstart' ]; then
