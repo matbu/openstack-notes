@@ -1,5 +1,6 @@
 #!/bin/bash
 source /home/stack/stackrc;
+echo "########################################################"
 # run command on overcloud
 function run-on-overcloud() {
     for i in $(nova list|grep ctlplane|awk -F' ' '{ print $12 }'|awk -F'=' '{ print $2 }'); do
@@ -11,26 +12,47 @@ run-on-overcloud 'sudo git clone https://git.openstack.org/openstack/heat-templa
 echo "install ansible hook"
 run-on-overcloud 'sudo /root/heat-templates/hot/software-config/elements/heat-config-ansible/install.d/50-heat-config-hook-ansible'
 
-cat <<EOF>> repo.yaml
+echo "########################################################"
+echo " cat init repo"
+cat <<EOF>> init-repo.yaml
 parameter_defaults:
   UpgradeInitCommand: |
     set -e
     curl -o /etc/yum.repos.d/delorean.repo http://buildlogs.centos.org/centos/7/cloud/x86_64/rdo-trunk-master-tested/delorean.repo
     curl -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7-master/delorean-deps.repo
     yum clean all
+    yum install -y python-heat-agent-*
+    git clone https://github.com/redhat-openstack/ansible-pacemaker
+    pushd ansible-pacemaker
+    python setup.py install
+    popd
+    yum remove -y python-UcsSdk openstack-neutron-bigswitch-agent python-networking-bigswitch openstack-neutron-bigswitch-lldp python-networking-odl
+    crudini --set /etc/ansible/ansible.cfg DEFAULT library /usr/share/ansible-modules/
+    rm -f /usr/libexec/os-apply-config/templates/etc/puppet/hiera.yaml
+    rm -f /usr/libexec/os-refresh-config/configure.d/40-hiera-datafiles
+    rm -f /etc/puppet/hieradata/*.yaml
 EOF
 
+echo "########################################################"
 cat <<EOF>> custom.yaml
 parameter_defaults:
   KeystoneFernetKey1: azerty
   KeystoneFernetKey0: azerty
 EOF
 
+echo "########################################################"
+echo "test jinja2 templating"
+cat <<EOF>> render.py
+from jinja2 import Environment, FileSystemLoader
+#env = Environment(loader=FileSystemLoader('templates'))
+ 
+HTML = open('up.j2', 'rb')
+import pdb
+print Environment().from_string(HTML.read()).render(roles=['controller'])
+EOF
+
+echo "########################################################"
 echo "Json to Yaml:"
-#i = {}
-#print yaml.dump(yaml.load(json.dumps(json.loads(i))), default_flow_style=False)
-
-
 cat <<EOF>> json2yaml.py
 import sys, json, yaml
 
@@ -46,6 +68,25 @@ else:
     sys.exit()
 EOF
 
+echo "########################################################"
+openstack stack output show overcloud EnabledServices
+# usefull review:
+# a
+# https://review.openstack.org/#/c/403397/13 (with workaround)
+# https://review.openstack.org/#/c/403397 pacemaker (without workaround)
+# https://review.openstack.org/#/c/408631 step0
+
+# https://review.openstack.org/418920 neutron
+
+echo "########################################################"
+for i in $(grep -r 'heat_template_version: ocata' tripleo-heat-templates/* | cut -d ':' -f1 |  xargs -0); do sed -i "s/heat_template_version: ocata/heat_template_version: newton/" $i; done;
+echo "########################################################"
+for i in $(grep -r 'step0,validation' tripleo-heat-templates/* | cut -d ':' -f1 |  xargs -0); do sed -i "s/step0,validation/validation/" $i; done;
+echo "########################################################"
+crudini --set nova.conf DEFAULT metadata_workers 1
+
+echo "########################################################"
+echo "grab review"
 git clone https://github.com/openstack/tripleo-heat-templates.git /home/stack/tripleo-heat-templates
 for i in 393448; do # already merged 375973 375977
     curl "https://review.openstack.org/changes/$i/revisions/15/patch" |base64 --decode > /home/stack/"$i.patch"
@@ -54,6 +95,7 @@ for i in 393448; do # already merged 375973 375977
     popd
 done
 
+#pacemaker
 for i in 403397; do # already merged 375973 375977
     curl "https://review.openstack.org/changes/$i/revisions/current/patch" |base64 --decode > /home/stack/"$i.patch"
     pushd tripleo-heat-templates
@@ -68,6 +110,23 @@ for i in 408631; do # already merged 375973 375977
     popd
 done
 
+#neutron
+for i in 418920; do # already merged 375973 375977
+    curl "https://review.openstack.org/changes/$i/revisions/current/patch" |base64 --decode > /home/stack/"$i.patch"
+    pushd tripleo-heat-templates
+    patch -N -p1 -b -z .first < /home/stack/$i.patch
+    popd
+done
+
+#nova
+for i in 405241; do # already merged 375973 375977
+    curl "https://review.openstack.org/changes/$i/revisions/current/patch" |base64 --decode > /home/stack/"$i.patch"
+    pushd tripleo-heat-templates
+    patch -N -p1 -b -z .first < /home/stack/$i.patch
+    popd
+done
+
+echo "########################################################"
 echo "Create default ansible module dir"
 run-on-overcloud 'sudo mkdir -p /usr/share/my_modules/'
 echo "Set ansible module dir"
@@ -78,9 +137,11 @@ for i in $(nova list|grep ctlplane|awk -F' ' '{ print $12 }'|awk -F'=' '{ print 
         scp -o StrictHostKeyChecking=no /home/stack/tripleo-heat-templates/ansible/library/* heat-admin@$i:/usr/share/my_modules/
 done
 
+echo "########################################################"
 echo "deploy command w/o net iso and HA:"
 echo "  openstack overcloud deploy --templates tripleo-heat-templates     -e tripleo-heat-templates/overcloud-resource-registry-puppet.yaml     -e tripleo-heat-templates/environments/major-upgrade-composable-steps.yaml --no-cleanup -e custom.yaml -e repo.yaml   "
 
+echo "########################################################"
 echo "deploy command with pacemaker and network isolation:"
 echo "  openstack overcloud deploy --templates tripleo-heat-templates     -e tripleo-heat-templates/overcloud-resource-registry-puppet.yaml \
     -e tripleo-heat-templates/environments/network-isolation.yaml \
@@ -88,3 +149,29 @@ echo "  openstack overcloud deploy --templates tripleo-heat-templates     -e tri
     -e ~/network-environment.yaml \
     -e tripleo-heat-templates/environments/puppet-pacemaker.yaml \
     -e tripleo-heat-templates/environments/major-upgrade-composable-steps.yaml --no-cleanup -e custom.yaml -e repo.yaml  "
+
+echo "########################################################"
+echo "  openstack overcloud deploy  -e /usr/share/openstack-tripleo-heat-templates/overcloud-resource-registry-puppet.yaml -e /home/stack/overcloud_services.yaml -e /usr/share/openstack-tripleo-heat-templates/environments/major-upgrade-all-in-one.yaml -e /home/stack/init-repo.yaml --templates /usr/share/openstack-tripleo-heat-templates   "
+
+echo "########################################################"
+echo " deploy command PCS no converge"
+echo "
+openstack overcloud deploy --templates tripleo-heat-templates \
+    -e tripleo-heat-templates/environments/network-isolation.yaml \
+    -e tripleo-heat-templates/environments/net-single-nic-with-vlans.yaml \
+    -e ~/network-environment.yaml \
+    -e tripleo-heat-templates/environments/puppet-pacemaker.yaml \
+    -e tripleo-heat-templates/environments/major-upgrade-composable-steps.yaml --no-cleanup -e init-repo.yaml
+"
+
+echo "########################################################"
+echo " All in one PCS"
+echo "
+openstack overcloud deploy --templates tripleo-heat-templates \
+    -e tripleo-heat-templates/environments/network-isolation.yaml \
+    -e tripleo-heat-templates/environments/net-single-nic-with-vlans.yaml \
+    -e ~/network-environment.yaml \
+    -e tripleo-heat-templates/environments/puppet-pacemaker.yaml \
+    -e tripleo-heat-templates/environments/major-upgrade-all-in-one.yaml \
+     --no-cleanup -e init-repo.yaml
+"
