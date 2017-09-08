@@ -18,14 +18,11 @@ cat <<EOF>> init-repo.yaml
 parameter_defaults:
   UpgradeInitCommand: |
     set -e
-    curl -o /etc/yum.repos.d/delorean.repo http://buildlogs.centos.org/centos/7/cloud/x86_64/rdo-trunk-master-tested/delorean.repo
-    curl -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7-master/delorean-deps.repo
+    curl -L -o /etc/yum.repos.d/delorean.repo https://trunk.rdoproject.org/centos7-master/current-tripleo/delorean.repo
+    curl -L -o /etc/yum.repos.d/delorean-deps.repo http://trunk.rdoproject.org/centos7-ocata/delorean-deps.repo
     yum clean all
     yum install -y python-heat-agent-*
-    git clone https://github.com/redhat-openstack/ansible-pacemaker
-    pushd ansible-pacemaker
-    python setup.py install
-    popd
+    yum install -y ansible-pacemaker
     yum remove -y python-UcsSdk openstack-neutron-bigswitch-agent python-networking-bigswitch openstack-neutron-bigswitch-lldp python-networking-odl
     crudini --set /etc/ansible/ansible.cfg DEFAULT library /usr/share/ansible-modules/
     rm -f /usr/libexec/os-apply-config/templates/etc/puppet/hiera.yaml
@@ -156,12 +153,12 @@ echo "  openstack overcloud deploy  -e /usr/share/openstack-tripleo-heat-templat
 echo "########################################################"
 echo " deploy command PCS no converge"
 echo "
-openstack overcloud deploy --templates tripleo-heat-templates \
-    -e tripleo-heat-templates/environments/network-isolation.yaml \
-    -e tripleo-heat-templates/environments/net-single-nic-with-vlans.yaml \
+openstack overcloud deploy --templates tripleo-heat-templates-ocata \
+    -e tripleo-heat-templates-ocata/environments/network-isolation.yaml \
+    -e tripleo-heat-templates-ocata/environments/net-single-nic-with-vlans.yaml \
     -e ~/network-environment.yaml \
-    -e tripleo-heat-templates/environments/puppet-pacemaker.yaml \
-    -e tripleo-heat-templates/environments/major-upgrade-composable-steps.yaml --no-cleanup -e init-repo.yaml
+    -e tripleo-heat-templates-ocata/environments/puppet-pacemaker.yaml \
+    -e tripleo-heat-templates-ocata/environments/major-upgrade-composable-steps.yaml --no-cleanup -e init-repo.yaml
 "
 
 echo "########################################################"
@@ -175,3 +172,16 @@ openstack overcloud deploy --templates tripleo-heat-templates \
     -e tripleo-heat-templates/environments/major-upgrade-all-in-one.yaml \
      --no-cleanup -e init-repo.yaml
 "
+
+
+
+
+
+
+
+openstack overcloud deploy --templates /usr/share/openstack-tripleo-heat-templates \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/network-isolation.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/net-single-nic-with-vlans.yaml \
+    -e ~/network-environment.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/puppet-pacemaker.yaml \
+    -e /usr/share/openstack-tripleo-heat-templates/environments/major-upgrade-composable-steps.yaml --no-cleanup -e init-repo.yaml

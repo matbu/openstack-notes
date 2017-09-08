@@ -10,3 +10,5 @@ if len(sys.argv) == 2:
 else:
     print "You must provide a json file"
     sys.exit()
+
+#stack.to_dict().get('outputs', {})[0]['output_value']['Controller']['upgrade_tasks']
